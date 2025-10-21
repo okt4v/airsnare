@@ -1,6 +1,7 @@
 import sys
 import termios
 import tty
+import os
 
 
 class colors:
@@ -84,8 +85,29 @@ def getch():
     return ch
 
 
+def main_screen():
+    os.system("clear")
+    draw_banner()
+    print("""
+[1] Continious scan
+
+[Q] Exit
+    """)
+    tmpgetch = getch()
+    if tmpgetch == "1":
+        continuous_scan()
+    elif tmpgetch == "q":
+        sys.exit()
+
+
+def continuous_scan():
+    print("test")
+
+
 def main():
     draw_banner()
+    while True:
+        main_screen()
 
 
 if __name__ == "__main__":
