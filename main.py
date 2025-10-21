@@ -101,26 +101,12 @@ def main_screen():
     """)  # improve this later
     tmpgetch = getch()
     if tmpgetch == "1":
-        asyncio.run(continuous_scan())
+        try:
+            asyncio.run(continuous_scan())
+        except KeyboardInterrupt:
+            pass
     elif tmpgetch == "q":
         sys.exit()
-
-
-# async def scan_for_dev():
-#     try:
-#         devices = await BleakScanner.discover()
-#         return devices
-#     except Exception as e:
-#         print(f"Failed to scan for devices: {e}")
-#         return []
-
-
-# async def continuous_scan():
-#     while True:
-#         devices = await scan_for_dev()
-#         for device in devices:
-#             print(f"Device: {device.name}, Address: {device.address}")
-#         await asyncio.sleep(5)
 
 
 async def continuous_scan():
@@ -143,8 +129,12 @@ async def continuous_scan():
 
 def main():
     draw_banner()
-    while True:
-        main_screen()
+    try:
+        while True:
+            main_screen()
+    except KeyboardInterrupt:
+        print("\nExiting...")
+        sys.exit()
 
 
 if __name__ == "__main__":
