@@ -2,6 +2,8 @@ import sys
 import termios
 import tty
 import os
+from bleak import BleakScanner
+import asyncio
 
 
 class colors:
@@ -92,16 +94,29 @@ def main_screen():
 [1] Continious scan
 
 [Q] Exit
-    """)
+    """)  # improve this later
     tmpgetch = getch()
     if tmpgetch == "1":
-        continuous_scan()
+        asyncio.run(continuous_scan())
     elif tmpgetch == "q":
         sys.exit()
 
 
-def continuous_scan():
-    print("test")
+async def scan_for_dev():
+    try:
+        devices = await BleakScanner.discover()
+        return devices
+    except Exception as e:
+        print(f"Failed to scan for devices: {e}")
+        return []
+
+
+async def continuous_scan():
+    while True:
+        devices = await scan_for_dev()
+        for device in devices:
+            print(f"Device: {device.name}, Address: {device.address}")
+        await asyncio.sleep(5)
 
 
 def main():
