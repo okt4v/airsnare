@@ -125,18 +125,23 @@ def main_screen():
 
 async def continuous_scan():
     def detection_callback(device, advertisement_data):
-        print(
-            f"{device.name} {device.address} {advertisement_data.rssi}dBm  {advertisement_data.tx_power}"
-        )
+        # This gets called every time a device is detected
+        print(f"Device: {device.name or 'Unknown'}")
+        print(f"Address: {device.address}")
+        print(f"RSSI: {advertisement_data.rssi} dBm")
+        print("-" * 40)
 
     scanner = BleakScanner(detection_callback=detection_callback)
 
+    print("Starting continuous BLE scan... Press Ctrl+C to stop.")
+
     try:
         await scanner.start()
+        # Keep the scanner running - use a simple wait loop
         while True:
             await asyncio.sleep(1)
     except KeyboardInterrupt:
-        print("Stopping")
+        print("\nStopping scan...")
     finally:
         await scanner.stop()
 
@@ -149,9 +154,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# NOTES
-# {advertisement_data.local_name} --> this is unused but may be usefull in the future so that if a device doesnt have a device.name then one can check if it has this
-#
-#
