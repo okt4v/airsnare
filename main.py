@@ -131,10 +131,12 @@ def getch():
 
 def main_screen():
     draw_banner()
-    print("""
-[1] Continious scan
+    print(f"""
+{colors.YELLOW}Please enter one of the options below:{colors.RESET}
 
-[Q] Quit
+    {colors.GREEN}[1] Continious scan {colors.RESET}
+
+    {colors.RED}[Q] Quit{colors.RESET}
     """)
     user_choice = getch()
     if user_choice == "1":
@@ -148,6 +150,7 @@ def main_screen():
 
 
 async def continuous_scan():
+    print(f"{colors.YELLOW}Starting continuous scan…{colors.RESET}")
     start_time = time.time()
 
     def estimate_distance(rssi):
@@ -174,7 +177,11 @@ async def continuous_scan():
         # else:
         #     pass
         print(
-            f"{device.name or 'Unknown'}, {device.address}, rssi {advertisement_data.rssi}dBm, manufacturer: {manufacturer}, distance: {distance}"
+            f"{(colors.GREEN + device.name + colors.RESET) if device.name else 'Unknown'}, "
+            f"{device.address}, "
+            f"rssi {advertisement_data.rssi}dBm, "
+            f"manufacturer: {(colors.GREEN + manufacturer + colors.RESET) if manufacturer != 'Unknown' else manufacturer}, "
+            f"distance: {distance}"
         )
 
     scanner = BleakScanner(detection_callback=detection_callback)
