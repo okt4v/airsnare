@@ -5,6 +5,7 @@ import os
 from bleak import BleakScanner
 import asyncio
 import time
+import pandas as pd
 
 
 class colors:
@@ -60,6 +61,20 @@ class colors:
 
 class fp:
     banner_file = "./res/program/banner.txt"
+    macdb = "./res/macdb/mac.csv"
+
+
+macdf = pd.read_csv(fp.macdb, usecols=["Mac Address", "Organization Name"])  # type: ignore
+macdf["Mac Address"] = macdf["Mac Address"].str.upper()
+macdf.set_index("Mac Address", inplace=True)
+
+
+def get_manufacturer(mac):
+    oui = mac.replace(":", "")[:6]
+    try:
+        return macdf.loc[oui, "Organization Name"]
+    except KeyError:
+        return "Unknown"
 
 
 def clear_screen():
@@ -71,9 +86,16 @@ def init():
     draw_banner()
     found_files = 0
     if os.path.isfile(fp.banner_file):
-        print(f"✅ banner file found ({fp.banner_file})")
+        print(f"✅ Banner file found ({fp.banner_file})")
         found_files += 1
-    if found_files == 1:
+    else:
+        print(f"{colors.RED}❌ Banner file not found ({fp.banner_file}){colors.RESET}")
+    if os.path.isfile(fp.macdb):
+        print(f"✅ Mac database file found ({fp.macdb})")
+        found_files += 1
+    else:
+        print(f"{colors.RED}❌ Mac database file not found ({fp.macdb}){colors.RESET}")
+    if found_files == 2:
         print(f"\nAll files {colors.GREEN}succsessfully{colors.RESET} found!")
         print(f"{colors.YELLOW}Press any key to continue…{colors.RESET}")
         getch()
@@ -143,6 +165,7 @@ async def continuous_scan():
             return "30m+"
 
     def detection_callback(device, advertisement_data):
+        manufacturer = get_manufacturer(device.address)
         distance = estimate_distance(advertisement_data.rssi)
         # if device.name == "AirPods Pro":
         #     print(
@@ -151,7 +174,7 @@ async def continuous_scan():
         # else:
         #     pass
         print(
-            f"{device.name}, {device.address}, rssi {advertisement_data.rssi}dBm, tx_power: {advertisement_data.tx_power}, distance: {distance}"
+            f"{device.name or 'Unknown'}, {device.address}, rssi {advertisement_data.rssi}dBm, manufacturer: {manufacturer}, distance: {distance}"
         )
 
     scanner = BleakScanner(detection_callback=detection_callback)
@@ -191,3 +214,4 @@ if __name__ == "__main__":
 # n = 2 for free space (can be 2-4 depending on environment)
 # unicode char:
 # ✅
+# ❌
