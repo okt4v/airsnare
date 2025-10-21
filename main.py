@@ -92,7 +92,6 @@ def getch():
 
 
 def main_screen():
-    clear_screen()
     draw_banner()
     print("""
 [1] Continious scan
@@ -110,9 +109,30 @@ def main_screen():
 
 
 async def continuous_scan():
+    def estimate_distance(rssi):  #     # Rule of thumb for BLE:
+        if rssi is None:
+            return None
+        elif rssi >= -60:
+            return "< 1m"
+        elif rssi >= -70:
+            return "1-3m"
+        elif rssi >= -80:
+            return "3-10m"
+        elif rssi >= -90:
+            return "10-30m"
+        elif rssi < -90:
+            return "30m+"
+
     def detection_callback(device, advertisement_data):
+        distance = estimate_distance(advertisement_data.rssi)
+        # if device.name == "AirPods Pro":
+        #     print(
+        #         f"{device.name}, {device.address}, rssi {advertisement_data.rssi}dBm, tx_power: {advertisement_data.tx_power}, distance: {distance}"
+        #     )
+        # else:
+        #     pass
         print(
-            f"{device.name} {device.address} {advertisement_data.rssi}dBm  {advertisement_data.tx_power}"
+            f"{device.name}, {device.address}, rssi {advertisement_data.rssi}dBm, tx_power: {advertisement_data.tx_power}, distance: {distance}"
         )
 
     scanner = BleakScanner(detection_callback=detection_callback)
@@ -128,7 +148,6 @@ async def continuous_scan():
 
 
 def main():
-    draw_banner()
     try:
         while True:
             main_screen()
@@ -144,4 +163,39 @@ if __name__ == "__main__":
 # NOTES
 # {advertisement_data.local_name} --> this is unused but may be usefull in the future so that if a device doesnt have a device.name then one can check if it has this
 #
+# Path loss formula: RSSI = TxPower - 10 * n * log10(distance)
+# n = 2 for free space (can be 2-4 depending on environment)
 #
+# Option 1: Use RSSI-only estimation (no TX power needed)
+#
+# Most practical Bluetooth proximity apps use a simplified approach:
+#
+# def estimate_distance_simple(rssi):
+#     # Rule of thumb for BLE:
+#     # -50 to -60 dBm = very close (< 1m)
+#     # -60 to -70 dBm = close (1-3m)
+#     # -70 to -80 dBm = medium (3-10m)
+#     # -80 to -90 dBm = far (10-30m)
+#     # -90+ dBm = very far (30m+)
+#
+#     if rssi >= -60:
+#         return "< 1m"
+#     elif rssi >= -70:
+#         return "1-3m"
+#     elif rssi >= -80:
+#         return "3-10m"
+#     elif rssi >= -90:
+#         return "10-30m"
+#     else:
+#         return "> 30m"
+#
+# Option 2: Assume a standard TX power
+#
+# Most BLE devices transmit at around 0 dBm at 1 meter:
+#
+# def estimate_distance(rssi, tx_power=None):
+#     if tx_power is None:
+#         tx_power = 0  # Assume 0 dBm as default
+#     n = 2.5  # More realistic for indoor
+#     distance = 10 ** ((tx_power - rssi) / (10 * n))
+#     return round(distance, 2)
