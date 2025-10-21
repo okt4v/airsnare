@@ -4,6 +4,7 @@ import tty
 import os
 from bleak import BleakScanner
 import asyncio
+import time
 
 
 class colors:
@@ -65,7 +66,22 @@ def clear_screen():
     os.system("clear" if os.name != "nt" else "cls")
 
 
+def init():
+    clear_screen()
+    draw_banner()
+    found_files = 0
+    if os.path.isfile(fp.banner_file):
+        print(f"✅ banner file found ({fp.banner_file})")
+        found_files += 1
+    if found_files == 1:
+        print(f"\nAll files {colors.GREEN}succsessfully{colors.RESET} found!")
+        print(f"{colors.YELLOW}Press any key to continue…{colors.RESET}")
+        getch()
+        clear_screen()
+
+
 def draw_banner():
+    clear_screen()
     try:
         with open(fp.banner_file, "r") as file:
             banner = file.read()
@@ -96,20 +112,23 @@ def main_screen():
     print("""
 [1] Continious scan
 
-[Q] Exit
-    """)  # improve this later
-    tmpgetch = getch()
-    if tmpgetch == "1":
+[Q] Quit
+    """)
+    user_choice = getch()
+    if user_choice == "1":
         try:
             asyncio.run(continuous_scan())
         except KeyboardInterrupt:
             pass
-    elif tmpgetch == "q":
+    elif user_choice == "q":
+        print(f"{colors.YELLOW}Quitting…{colors.RESET}")
         sys.exit()
 
 
 async def continuous_scan():
-    def estimate_distance(rssi):  #     # Rule of thumb for BLE:
+    start_time = time.time()
+
+    def estimate_distance(rssi):
         if rssi is None:
             return None
         elif rssi >= -60:
@@ -145,9 +164,14 @@ async def continuous_scan():
         print("Stopping")
     finally:
         await scanner.stop()
+        time_taken = round((time.time() - start_time), 2)
+        print(f"\n\nscanned for {time_taken}s")
+        print(f"{colors.YELLOW}Press any key to continue…{colors.RESET}")
+        getch()
 
 
 def main():
+    init()
     try:
         while True:
             main_screen()
@@ -165,37 +189,5 @@ if __name__ == "__main__":
 #
 # Path loss formula: RSSI = TxPower - 10 * n * log10(distance)
 # n = 2 for free space (can be 2-4 depending on environment)
-#
-# Option 1: Use RSSI-only estimation (no TX power needed)
-#
-# Most practical Bluetooth proximity apps use a simplified approach:
-#
-# def estimate_distance_simple(rssi):
-#     # Rule of thumb for BLE:
-#     # -50 to -60 dBm = very close (< 1m)
-#     # -60 to -70 dBm = close (1-3m)
-#     # -70 to -80 dBm = medium (3-10m)
-#     # -80 to -90 dBm = far (10-30m)
-#     # -90+ dBm = very far (30m+)
-#
-#     if rssi >= -60:
-#         return "< 1m"
-#     elif rssi >= -70:
-#         return "1-3m"
-#     elif rssi >= -80:
-#         return "3-10m"
-#     elif rssi >= -90:
-#         return "10-30m"
-#     else:
-#         return "> 30m"
-#
-# Option 2: Assume a standard TX power
-#
-# Most BLE devices transmit at around 0 dBm at 1 meter:
-#
-# def estimate_distance(rssi, tx_power=None):
-#     if tx_power is None:
-#         tx_power = 0  # Assume 0 dBm as default
-#     n = 2.5  # More realistic for indoor
-#     distance = 10 ** ((tx_power - rssi) / (10 * n))
-#     return round(distance, 2)
+# unicode char:
+# ✅
